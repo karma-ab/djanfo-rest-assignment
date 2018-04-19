@@ -40,16 +40,17 @@ def snippet_list(request):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             #myActivity = Activity.objects.get(userId=userIDValue)
-            if myActivity.login!=None:
+            else:
                 myActivity.login = timezone.now()
                 myActivity.logout = None
+                myActivity.save()
                 return Response(status=status.HTTP_201_CREATED)
-            else:
-                serializer = ActivitySerializer(data=request.data)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # else:
+            #     serializer = ActivitySerializer(data=request.data)
+            #     if serializer.is_valid():
+            #         serializer.save()
+            #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+            #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
 def logout(request):
@@ -59,7 +60,8 @@ def logout(request):
         myActivity = Activity.objects.get(userId=userIDValue)
         loginTime = myActivity.login
         myActivity.logout=timezone.now()
+        oldDiff = myActivity.loginDuration
         diff=timezone.now()-loginTime
-        myActivity.loginDuration = diff.seconds
+        myActivity.loginDuration = diff.seconds + oldDiff
         myActivity.save()
         return Response(status=status.HTTP_201_CREATED)
