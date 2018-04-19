@@ -1,17 +1,13 @@
 from django.http import HttpResponse
-from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Post
 from .models import Activity
-from django.views.decorators.csrf import csrf_exempt
 from .serializers import UserSerializer
 from .serializers import ActivitySerializer
 from rest_framework.decorators import api_view
 from rest_framework import status
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 import json
 
 @api_view(['GET', 'POST'])

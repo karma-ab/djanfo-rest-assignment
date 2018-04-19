@@ -5,9 +5,7 @@ from django.db import migrations
 def create_initial_products(apps, schema_editor):
     Product = apps.get_model('userActivity', 'Post')
 
-    Product(name='Salame').save()
-    Product(name='Olio Balsamico').save()
-
+    Product(user_id='123125',name='Salame',password = 'salame').save()
 
 
 class Migration(migrations.Migration):
