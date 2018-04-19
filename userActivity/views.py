@@ -4,10 +4,14 @@ from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Post
+from .models import Activity
 from django.views.decorators.csrf import csrf_exempt
 from .serializers import UserSerializer
+from .serializers import ActivitySerializer
 from rest_framework.decorators import api_view
 from rest_framework import status
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
 import json
 
 @api_view(['GET', 'POST'])
@@ -21,8 +25,41 @@ def snippet_list(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        incoming = data=request.data
+        userIDValue = incoming["userId"]
+        userDetails = Post.objects.get(name=incoming["name"])
+        if userDetails.password == incoming["password"]:
+            try:
+                myActivity = Activity.objects.get(userId=userIDValue)
+                #myActivity = get_object_or_404(Activity, userId=userIDValue)
+            except Activity.DoesNotExist:
+                serializer = ActivitySerializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            #myActivity = Activity.objects.get(userId=userIDValue)
+            if myActivity.login!=None:
+                myActivity.login = timezone.now()
+                myActivity.logout = None
+                return Response(status=status.HTTP_201_CREATED)
+            else:
+                serializer = ActivitySerializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+def logout(request):
+    if request.method == 'POST':
+        incoming = data=request.data
+        userIDValue = incoming["userId"]
+        myActivity = Activity.objects.get(userId=userIDValue)
+        loginTime = myActivity.login
+        myActivity.logout=timezone.now()
+        diff=timezone.now()-loginTime
+        myActivity.loginDuration = diff.seconds
+        myActivity.save()
+        return Response(status=status.HTTP_201_CREATED)
