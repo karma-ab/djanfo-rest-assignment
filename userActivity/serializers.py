@@ -12,6 +12,4 @@ class ActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Activity
         fields = ('userId_id','login', 'logout','loginDuration')
-    # def create(self, data):
-    #     post, __ = Post.objects.get_or_create(user_id=data["userId"])
-    #     return Activity(logout=data["logout"], post=post)
+    

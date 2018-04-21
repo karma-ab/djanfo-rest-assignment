@@ -9,10 +9,9 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from django.utils import timezone
 from django.http import JsonResponse
-import json
 
 @api_view(['GET', 'POST'])
-def snippet_list(request):
+def login(request):
     """
     List all code snippets, or create a new snippet.
     """
@@ -27,36 +26,21 @@ def snippet_list(request):
         try:
             userDetails = Post.objects.get(name=incoming["name"])
         except Post.DoesNotExist:
-            returnJson = {'message':'Username is invalid'}
-            return JsonResponse(returnJson)
+            return JsonResponse({'message':'Username is invalid'})
         else:
             if userDetails.password == incoming["password"]:
                 try:
-                    myActivity = Activity.objects.get(userId=userIDValue)
-                    #myActivity = get_object_or_404(Activity, userId=userIDValue)
+                    myActivity = Activity.objects.get(userId_id=userIDValue)
                 except Activity.DoesNotExist:
-                    serializer = ActivitySerializer(data=request.data)
-                    if serializer.is_valid():
-                        serializer.save()
-                        return Response(serializer.data, status=status.HTTP_201_CREATED)
-                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-                #myActivity = Activity.objects.get(userId=userIDValue)
+                    Activity(userId_id=userIDValue,logout=None).save()
+                    return JsonResponse({'message':'Login Successful'})
                 else:
                     myActivity.login = timezone.now()
                     myActivity.logout = None
                     myActivity.save()
-                    return Response(status=status.HTTP_201_CREATED)
+                    return JsonResponse({'message':'Login Successful'})
             else:
-                returnJson = {'message':'Password is invalid'}
-                return JsonResponse(returnJson)
-
-            # else:
-            #     serializer = ActivitySerializer(data=request.data)
-            #     if serializer.is_valid():
-            #         serializer.save()
-            #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-            #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({'message':'Password is invalid'})
 
 @api_view(['GET', 'POST'])
 def logout(request):
@@ -72,11 +56,23 @@ def logout(request):
         diff=timezone.now()-loginTime
         myActivity.loginDuration = diff.seconds + oldDiff
         myActivity.save()
-        return Response(status=status.HTTP_201_CREATED)
+        return JsonResponse({'message':'Logout is Successful'})
 
 @api_view(['GET','POST'])
 def rankedUser(request):
     if request.method=='GET':
         allUserActivity = Activity.objects.order_by('-loginDuration')
         serializer = ActivitySerializer(allUserActivity,many=True)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        finalJsonArray = []
+        for i,activityUser in enumerate(allUserActivity):
+            userObject = Post.objects.get(user_id=activityUser.userId_id)
+            userRankJson = {
+                'id' : activityUser.userId_id,
+                'name' : userObject.name,
+                'lastlogin' : activityUser.login,
+                'lastlogout' : activityUser.logout,
+                'loginDuration' : activityUser.loginDuration,
+                'rank':i+1
+            }
+            finalJsonArray.append(userRankJson)
+        return JsonResponse(finalJsonArray,safe=False)
